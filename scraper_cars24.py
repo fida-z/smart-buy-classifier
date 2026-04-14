@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 
 driver = webdriver.Firefox()
 driver.maximize_window()
-driver.get('https://www.cars24.com/buy-used-cars-delhi-ncr/?sort=lhl&serveWarrantyCount=true&listingSource=ViewAllCars&storeCityId=2')
+driver.get('https://www.cars24.com/buy-used-cars-faridabad/?sort=lhl&serveWarrantyCount=true&storeCityId=6')
 urls = set()
 last_height = 0
 
@@ -53,8 +53,11 @@ def get_car_data(url_list):
                 wait = WebDriverWait(driver,20)
                 driver.get(url)
                 model = wait.until(EC.presence_of_element_located((By.TAG_NAME, "h1"))).text
-                price = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "lfZZUB"))).text    
-                price_score = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "styles_information__Y5fPZ"))).text
+                price = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "lfZZUB"))).text   
+                try: 
+                    price_score = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "styles_information__Y5fPZ"))).text
+                except:
+                    price_score = 'NA'
                 plate_container = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'styles_carMeta__hm1XQ')))
                 plate = plate_container.find_elements(By.TAG_NAME, 'p')[-1].text
                 
