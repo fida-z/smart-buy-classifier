@@ -42,7 +42,7 @@ while True:
 
 
 def get_car_data(url_list):
-    with open('temp.txt','a', encoding='utf-8') as wf:
+    with open('cardekho.txt','a', encoding='utf-8') as wf:
         for url in url_list:
             try:
                 data = {}
