@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 
 driver = webdriver.Firefox()
 driver.maximize_window()
-driver.get('https://www.cars24.com/buy-used-cars-faridabad/?sort=lhl&serveWarrantyCount=true&storeCityId=6')
+driver.get('https://www.cars24.com/buy-used-cars-delhi-ncr/?sort=lhl&serveWarrantyCount=true&storeCityId=1')
 urls = set()
 last_height = 0
 
@@ -45,7 +45,7 @@ while True:
 
 
 def get_car_data(url_list):
-    with open('data.txt','a', encoding='utf-8') as wf:
+    with open('./smart-buy-classifier/scraped_data/data.txt','a', encoding='utf-8') as wf:
         for url in url_list:
             try:
                 data = {}
