@@ -1,20 +1,55 @@
 import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
+import sys
+import os
+
+target_dir = os.path.abspath('../notebooks')
+sys.path.insert(1,target_dir)
+from feature_eng_exports import data
+
+
+# submit function definition:
+
+def submit_car(model, fuel, transmission, km_driven, engine_capacity, ownership, asking_price):
+    user_input = {
+        'Model': model,
+        'Fuel': fuel,
+        'Transmission': transmission,
+        'KM driven': int(km_driven) ,
+        'Engine capacity': int(engine_capacity),
+        'Ownership': ownership,
+        'asking_price': float(asking_price)
+    }
+    st.sidebar.write('Submitted Succesfully')
+
+
+
 
 # Sidebar
-st.sidebar.header('Car Details')
-user_input = {}
-user_input['brand'] = st.sidebar.text_input(label="Brand", value="", placeholder="Honda") # dropdown
-user_input['model'] = st.sidebar.text_input(label="Brand", value="", placeholder="City") # dropdown
-user_input['Fuel'] = st.sidebar.text_input(label="Fuel Type",value="",placeholder="Petrol") # dropdown
-user_input['Transmission'] = st.sidebar.text_input(label="Transmission Type", value="", placeholder="Automatic") # dropdown
-user_input['KM driven'] = st.sidebar.text_input(label="Distance Driven (in KM)", value="", placeholder="50000")
-user_input['Engine Capacity'] = st.sidebar.text_input(label="Engine Capacity (in cc)", value="", placeholder="1200")
-user_input['Ownership'] = st.sidebar.number_input(label="Ownership",min_value=1, max_value=10,placeholder="2") 
-user_input['asking_price'] = st.sidebar.text_input(label="Asking Price (in INR)", value="", placeholder="450000")
 
-st.sidebar.text("\n")
-if st.sidebar.button("Analyse Car", type='primary'):
-    st.text("Hullo")
+with st.sidebar.form(key="car_details", clear_on_submit=False):
+
+    st.markdown('## Car Details')
+
+    # getting data for dropdowns : 
+    model_list = data['model'].unique()
+    fuel_list = data['Fuel'].unique()
+    transmission_list = data['Transmission'].unique()
+
+    model = st.selectbox(label="Model", options=model_list) 
+    fuel = st.selectbox(label="Fuel Type",options=fuel_list) 
+    transmission = st.selectbox(label="Transmission Type", options=transmission_list) 
+    km_driven = st.text_input(label="Distance Driven (in KM)", value="", placeholder="50000")
+    engine_capacity = st.text_input(label="Engine Capacity (in cc)", value="", placeholder="1200")
+    ownership = st.number_input(label="Ownership",min_value=1, max_value=10,placeholder=2) 
+    asking_price = st.text_input(label="Asking Price (in INR)", value="", placeholder="450000")
+    
+    submitted = st.form_submit_button(label="Analyse Car", type='primary')
+
+if submitted:
+    submit_car(model, fuel, transmission, km_driven, engine_capacity, ownership, asking_price)
+
 
 
 # Main section :
@@ -24,10 +59,69 @@ st.title('Honda City 2018')
 pred_val, score, market_pos, ngt_left = st.columns(4)
 
 with pred_val:
-    st.metric(label='Predicted Market Value', value='72,000')
-
+    st.metric(label='Predicted Market Value', value='72,000', border=True)
 with score:
-    st.metric(label='Smart Buy Score', value='72/100')
-
+    st.metric(label='Smart Buy Score', value='72/100', border=True)
 with market_pos:
-    st.metric(label="Market Position", value=-8.5, delta_color='inverse', delta='Below Market Value')
+    st.metric(label="Market Position", value=-8.5, border=True)
+with ngt_left:
+    st.metric(label="NGT Life Remaining", value = 12, delta_color='normal', border=True)
+
+
+# SHAP and Market Insights :
+
+st.divider()
+
+shap_chart, dep_curve = st.columns(2)
+with shap_chart:
+    st.text('Why this Price with SHAP')
+    fig, ax = plt.subplots()
+    ax.scatter([1, 2, 3], [1, 2, 3])
+    st.pyplot(fig)
+
+with dep_curve:
+    st.text('Depreciation Curve over Years')
+    fig, ax = plt.subplots()
+    ax.scatter([1, 2, 3], [1, 2, 3])
+    st.pyplot(fig)
+
+st.divider()
+
+# Recommendation card and Depreciation Curve :
+
+mark_sum , rec_card = st.columns(2)
+
+with mark_sum:
+    st.text('Market Summary')
+
+    seg, seg_pop, avg_km,  = st.columns(3)
+    with seg:
+        st.metric(label='Segment', value='Mid-Range', border=True)
+    with seg_pop:
+        st.metric(label='Model Popularity', value='#1 in segment', border=True)
+    with avg_km:
+        st.metric(label='Segment-wise KM Driven', value='70,000 avg. per year', border=True)
+    
+    active_listings, avg_price, peer_grp_pct = st.columns(3)
+
+    with active_listings:
+        st.metric(label='No. of Active Listings', value='61 in Segment', border=True)
+    with avg_price:
+        st.metric(label='50', value='#1 in segment', border=True)
+    with peer_grp_pct:
+        st.metric(label='Model Popularity', value='#1 in segment', border=True)
+
+with rec_card:
+    st.text('AI Insights')
+    st.text("Lorem Ipsum")
+
+st.divider()
+
+st.title("Similar Active Listings")
+
+listing_table = pd.DataFrame({
+    "Model": [1,2,3,4,5],
+    "Year": [1,24,5,6,5],
+    'Ownership': [1,2,3,5,5]
+})
+st.table(listing_table)
