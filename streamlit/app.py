@@ -1,27 +1,34 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 import sys
 import os
+from app_funcs import run_predict, car_preprocess
 
+# import app_funcs
 target_dir = os.path.abspath('../notebooks')
 sys.path.insert(1,target_dir)
-from feature_eng_exports import data
+from feature_eng_exports import data, ngt_life
 
 
 # submit function definition:
 
-def submit_car(model, fuel, transmission, km_driven, engine_capacity, ownership, asking_price):
+def submit_car(model, year, fuel, transmission, km_driven, engine_capacity, ownership, asking_price):
     user_input = {
-        'Model': model,
-        'Fuel': fuel,
-        'Transmission': transmission,
-        'KM driven': int(km_driven) ,
-        'Engine capacity': int(engine_capacity),
-        'Ownership': ownership,
-        'asking_price': float(asking_price)
+        'model': model if model else np.nan,
+        'Fuel': fuel if fuel else np.nan,
+        'Year': year if year else np.nan,
+        'Transmission': transmission if transmission else np.nan,
+        'KM driven': int(km_driven) if km_driven else np.nan ,
+        'Engine capacity': int(engine_capacity) if engine_capacity else np.nan,
+        'Ownership': ownership if ownership else np.nan,
+        'asking_price': float(asking_price) if asking_price else np.nan
     }
-    st.sidebar.write('Submitted Succesfully')
+    if np.nan in user_input.values():
+        st.sidebar.error('Incomplete Input!')
+    
+    return(user_input)
 
 
 
@@ -38,6 +45,7 @@ with st.sidebar.form(key="car_details", clear_on_submit=False):
     transmission_list = data['Transmission'].unique()
 
     model = st.selectbox(label="Model", options=model_list) 
+    year = st.number_input(label='Make Year', min_value=1950, max_value=2026)
     fuel = st.selectbox(label="Fuel Type",options=fuel_list) 
     transmission = st.selectbox(label="Transmission Type", options=transmission_list) 
     km_driven = st.text_input(label="Distance Driven (in KM)", value="", placeholder="50000")
@@ -48,80 +56,82 @@ with st.sidebar.form(key="car_details", clear_on_submit=False):
     submitted = st.form_submit_button(label="Analyse Car", type='primary')
 
 if submitted:
-    submit_car(model, fuel, transmission, km_driven, engine_capacity, ownership, asking_price)
+    st.session_state['user_details'] = submit_car(model, year, fuel, transmission, km_driven, engine_capacity, ownership, asking_price)
 
 
 
 # Main section :
+if 'user_details' in st.session_state:
+    user_details = st.session_state['user_details']
+    st.title('Honda City 2018')
 
-st.title('Honda City 2018')
+    pred_val, score, market_pos, ngt_left = st.columns(4)
 
-pred_val, score, market_pos, ngt_left = st.columns(4)
+    with pred_val:
+        pred_price = run_predict(user_details)
+        st.metric(label='Predicted Market Value', value=np.expm1(pred_price), border=True)
+    with score:
+        st.metric(label='Smart Buy Score', value='72/100', border=True)
+    with market_pos:
+        st.metric(label="Market Position", value=-8.5, border=True)
+    with ngt_left:
+        st.metric(label="NGT Life Remaining", value = ngt_life(user_details['Fuel'], 2026 - user_details['Year']), delta_color='normal', border=True)
 
-with pred_val:
-    st.metric(label='Predicted Market Value', value='72,000', border=True)
-with score:
-    st.metric(label='Smart Buy Score', value='72/100', border=True)
-with market_pos:
-    st.metric(label="Market Position", value=-8.5, border=True)
-with ngt_left:
-    st.metric(label="NGT Life Remaining", value = 12, delta_color='normal', border=True)
 
+    # SHAP and Market Insights :
 
-# SHAP and Market Insights :
+    st.divider()
 
-st.divider()
+    shap_chart, dep_curve = st.columns(2)
+    with shap_chart:
+        st.text('Why this Price with SHAP')
+        fig, ax = plt.subplots()
+        ax.scatter([1, 2, 3], [1, 2, 3])
+        st.pyplot(fig)
 
-shap_chart, dep_curve = st.columns(2)
-with shap_chart:
-    st.text('Why this Price with SHAP')
-    fig, ax = plt.subplots()
-    ax.scatter([1, 2, 3], [1, 2, 3])
-    st.pyplot(fig)
+    with dep_curve:
+        st.text('Depreciation Curve over Years')
+        fig, ax = plt.subplots()
+        ax.scatter([1, 2, 3], [1, 2, 3])
+        st.pyplot(fig)
 
-with dep_curve:
-    st.text('Depreciation Curve over Years')
-    fig, ax = plt.subplots()
-    ax.scatter([1, 2, 3], [1, 2, 3])
-    st.pyplot(fig)
+    st.divider()
 
-st.divider()
+    # Recommendation card and Depreciation Curve :
 
-# Recommendation card and Depreciation Curve :
+    mark_sum , rec_card = st.columns(2)
 
-mark_sum , rec_card = st.columns(2)
+    with mark_sum:
+        st.text('Market Summary')
 
-with mark_sum:
-    st.text('Market Summary')
+        seg, seg_pop, avg_km,  = st.columns(3)
+        with seg:
+            st.metric(label='Segment', value='Mid-Range', border=True)
+        with seg_pop:
+            st.metric(label='Model Popularity', value='#1 in segment', border=True)
+        with avg_km:
+            st.metric(label='Segment-wise KM Driven', value='70,000 avg. per year', border=True)
+        
+        active_listings, avg_price, peer_grp_pct = st.columns(3)
 
-    seg, seg_pop, avg_km,  = st.columns(3)
-    with seg:
-        st.metric(label='Segment', value='Mid-Range', border=True)
-    with seg_pop:
-        st.metric(label='Model Popularity', value='#1 in segment', border=True)
-    with avg_km:
-        st.metric(label='Segment-wise KM Driven', value='70,000 avg. per year', border=True)
-    
-    active_listings, avg_price, peer_grp_pct = st.columns(3)
+        with active_listings:
+            st.metric(label='No. of Active Listings', value='61 in Segment', border=True)
+        with avg_price:
+            st.metric(label='50', value='#1 in segment', border=True)
+        with peer_grp_pct:
+            st.metric(label='Model Popularity', value='#1 in segment', border=True)
 
-    with active_listings:
-        st.metric(label='No. of Active Listings', value='61 in Segment', border=True)
-    with avg_price:
-        st.metric(label='50', value='#1 in segment', border=True)
-    with peer_grp_pct:
-        st.metric(label='Model Popularity', value='#1 in segment', border=True)
+    with rec_card:
+        st.text('AI Insights')
+        st.text("Lorem Ipsum")
 
-with rec_card:
-    st.text('AI Insights')
-    st.text("Lorem Ipsum")
+    st.divider()
 
-st.divider()
+    st.title("Similar Active Listings")
 
-st.title("Similar Active Listings")
-
-listing_table = pd.DataFrame({
-    "Model": [1,2,3,4,5],
-    "Year": [1,24,5,6,5],
-    'Ownership': [1,2,3,5,5]
-})
-st.table(listing_table)
+    listing_table = pd.DataFrame({
+        "Model": [1,2,3,4,5],
+        "Year": [1,24,5,6,5],
+        'Ownership': [1,2,3,5,5]
+    })
+    st.table(listing_table)
