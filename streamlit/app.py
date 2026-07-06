@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import sys
 import os
-from app_funcs import run_predict, car_preprocess
+from app_funcs import run_predict, dep_calc, shap_calc, ai_insights, get_segment, model_popularity, listing_no
 
 # import app_funcs
 target_dir = os.path.abspath('../notebooks')
@@ -63,17 +63,21 @@ if submitted:
 # Main section :
 if 'user_details' in st.session_state:
     user_details = st.session_state['user_details']
-    st.title('Honda City 2018')
+    st.title(f'{user_details['model']} {user_details['Year']}')
 
     pred_val, score, market_pos, ngt_left = st.columns(4)
 
     with pred_val:
-        pred_price = run_predict(user_details)
-        st.metric(label='Predicted Market Value', value=np.expm1(pred_price), border=True)
+        pred = run_predict(user_details)
+        pred_price = np.expm1(pred)
+        lakh_num = (pred_price)/100000
+        lakh_string = f'₹{lakh_num.item():.2f} L'
+        st.metric(label='Predicted Market Value', value=lakh_string, border=True)
     with score:
         st.metric(label='Smart Buy Score', value='72/100', border=True)
     with market_pos:
-        st.metric(label="Market Position", value=-8.5, border=True)
+        mark_val = ((user_details['asking_price'] - pred_price)/pred_price)
+        st.metric(label="Market Position", value=mark_val, border=True, format='percent')
     with ngt_left:
         st.metric(label="NGT Life Remaining", value = ngt_life(user_details['Fuel'], 2026 - user_details['Year']), delta_color='normal', border=True)
 
@@ -85,14 +89,14 @@ if 'user_details' in st.session_state:
     shap_chart, dep_curve = st.columns(2)
     with shap_chart:
         st.text('Why this Price with SHAP')
-        fig, ax = plt.subplots()
-        ax.scatter([1, 2, 3], [1, 2, 3])
-        st.pyplot(fig)
+        shap_vals = shap_calc(user_details)
+        st.write(shap_vals)
 
     with dep_curve:
         st.text('Depreciation Curve over Years')
+        dep_details = dep_calc(user_details)
         fig, ax = plt.subplots()
-        ax.scatter([1, 2, 3], [1, 2, 3])
+        ax.plot(dep_details.keys(), dep_details.values())
         st.pyplot(fig)
 
     st.divider()
@@ -106,24 +110,39 @@ if 'user_details' in st.session_state:
 
         seg, seg_pop, avg_km,  = st.columns(3)
         with seg:
-            st.metric(label='Segment', value='Mid-Range', border=True)
+            segment = get_segment(user_details['model'])
+            if(segment == 0):
+                seg_label = 'Established Mid-Market Commuters' 
+            elif(segment == 1):
+                seg_label = 'Budget & Entry-Level Hatchbacks'
+            elif(segment == 2):
+                seg_label = 'Large Utility & Premium Cruisers'
+            elif(segment == 3):
+                seg_label = 'Modern Commuters & Premium Urban'
+
+            st.metric(label='Segment', value=seg_label, border=True)
+
         with seg_pop:
-            st.metric(label='Model Popularity', value='#1 in segment', border=True)
+            pop_val = model_popularity(user_details['model'],segment)
+            st.metric(label='Model Popularity', value=pop_val, border=True)
+
         with avg_km:
             st.metric(label='Segment-wise KM Driven', value='70,000 avg. per year', border=True)
         
         active_listings, avg_price, peer_grp_pct = st.columns(3)
 
         with active_listings:
-            st.metric(label='No. of Active Listings', value='61 in Segment', border=True)
+            list_no = listing_no(user_details['model'],segment)
+            st.metric(label='No. of Active Listings', value=list_no, border=True)
         with avg_price:
             st.metric(label='50', value='#1 in segment', border=True)
         with peer_grp_pct:
-            st.metric(label='Model Popularity', value='#1 in segment', border=True)
+            st.metric(label='Peer group percentile', value='#1 in segment', border=True)
 
     with rec_card:
-        st.text('AI Insights')
-        st.text("Lorem Ipsum")
+        st.text('AI Market Analyst Summary')
+        inp_arr = [user_details,shap_vals,dep_details]
+        # st.markdown(ai_insights(inp_arr))
 
     st.divider()
 
