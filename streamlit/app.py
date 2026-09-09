@@ -6,13 +6,13 @@ import sys
 import os
 from app_funcs import ngt_life, run_predict, dep_calc, shap_calc,render_waterfall ,ai_insights, get_segment, model_popularity, seg_analysis, fetch_similar
 from styles import STYLES
-
-# import app_funcs
 target_dir = os.path.abspath('../notebooks')
 sys.path.insert(1,target_dir)
-data = pd.read_csv('data.csv')
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+data = pd.read_csv(os.path.join(current_dir, 'data.csv'))
 st.markdown(STYLES, unsafe_allow_html=True)
+
 # submit function definition:
 
 def submit_car(model, year, fuel, transmission, km_driven, engine_capacity, ownership, asking_price):
