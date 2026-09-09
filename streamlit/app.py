@@ -4,14 +4,15 @@ import pandas as pd
 import numpy as np
 import sys
 import os
-from app_funcs import run_predict, dep_calc, shap_calc, ai_insights, get_segment, model_popularity, listing_no
+from app_funcs import ngt_life, run_predict, dep_calc, shap_calc,render_waterfall ,ai_insights, get_segment, model_popularity, seg_analysis, fetch_similar
+from styles import STYLES
 
 # import app_funcs
 target_dir = os.path.abspath('../notebooks')
 sys.path.insert(1,target_dir)
-from feature_eng_exports import data, ngt_life
+data = pd.read_csv('data.csv')
 
-
+st.markdown(STYLES, unsafe_allow_html=True)
 # submit function definition:
 
 def submit_car(model, year, fuel, transmission, km_driven, engine_capacity, ownership, asking_price):
@@ -37,6 +38,7 @@ def submit_car(model, year, fuel, transmission, km_driven, engine_capacity, owne
 
 with st.sidebar.form(key="car_details", clear_on_submit=False):
 
+    st.markdown('Please Enter details about your Car')
     st.markdown('## Car Details')
 
     # getting data for dropdowns : 
@@ -45,7 +47,7 @@ with st.sidebar.form(key="car_details", clear_on_submit=False):
     transmission_list = data['Transmission'].unique()
 
     model = st.selectbox(label="Model", options=model_list) 
-    year = st.number_input(label='Make Year', min_value=1950, max_value=2026)
+    year = st.number_input(label='Make Year', max_value=2026)
     fuel = st.selectbox(label="Fuel Type",options=fuel_list) 
     transmission = st.selectbox(label="Transmission Type", options=transmission_list) 
     km_driven = st.text_input(label="Distance Driven (in KM)", value="", placeholder="50000")
@@ -61,6 +63,8 @@ if submitted:
 
 
 # Main section :
+st.markdown('\n\n')
+st.markdown('Expand the Sidebar to Begin.')
 if 'user_details' in st.session_state:
     user_details = st.session_state['user_details']
     st.title(f'{user_details['model']} {user_details['Year']}')
@@ -79,7 +83,7 @@ if 'user_details' in st.session_state:
         mark_val = ((user_details['asking_price'] - pred_price)/pred_price)
         st.metric(label="Market Position", value=mark_val, border=True, format='percent')
     with ngt_left:
-        st.metric(label="NGT Life Remaining", value = ngt_life(user_details['Fuel'], 2026 - user_details['Year']), delta_color='normal', border=True)
+        st.metric(label="NGT Life Remaining", value = f'{ngt_life(user_details['Fuel'], 2026 - user_details['Year'])} years', delta_color='normal', border=True)
 
 
     # SHAP and Market Insights :
@@ -89,9 +93,9 @@ if 'user_details' in st.session_state:
     shap_chart, dep_curve = st.columns(2)
     with shap_chart:
         st.text('Why this Price with SHAP')
-        shap_vals = shap_calc(user_details)
-        st.write(shap_vals)
-
+        shap_result = shap_calc(user_details)
+        fig = render_waterfall(shap_result)
+        st.plotly_chart(fig, width='stretch')
     with dep_curve:
         st.text('Depreciation Curve over Years')
         dep_details = dep_calc(user_details)
@@ -108,7 +112,7 @@ if 'user_details' in st.session_state:
     with mark_sum:
         st.text('Market Summary')
 
-        seg, seg_pop, avg_km,  = st.columns(3)
+        seg, seg_pop  = st.columns(2)
         with seg:
             segment = get_segment(user_details['model'])
             if(segment == 0):
@@ -126,31 +130,38 @@ if 'user_details' in st.session_state:
             pop_val = model_popularity(user_details['model'],segment)
             st.metric(label='Model Popularity', value=pop_val, border=True)
 
-        with avg_km:
-            st.metric(label='Segment-wise KM Driven', value='70,000 avg. per year', border=True)
         
-        active_listings, avg_price, peer_grp_pct = st.columns(3)
+        avg_km, avg_price = st.columns(2)
+        price_avg, km_avg  = seg_analysis(segment)
 
-        with active_listings:
-            list_no = listing_no(user_details['model'],segment)
-            st.metric(label='No. of Active Listings', value=list_no, border=True)
+        with avg_km:
+            st.metric(label='Average Segment Mileage', value=km_avg, border=True, format='compact')
+
         with avg_price:
-            st.metric(label='50', value='#1 in segment', border=True)
-        with peer_grp_pct:
-            st.metric(label='Peer group percentile', value='#1 in segment', border=True)
+            lakh_avg = (price_avg)/100000
+            lakh_avg_str = f'₹{lakh_avg.item():.2f} L'
+
+            st.metric(label='Average Segment Price', value=lakh_avg_str, border=True)
+
+        market_details = {
+            'segment' : segment,
+            'segment popularity': seg_pop,
+            'segment avg km': km_avg,
+            'segment avg price': price_avg
+        }
 
     with rec_card:
         st.text('AI Market Analyst Summary')
-        inp_arr = [user_details,shap_vals,dep_details]
-        # st.markdown(ai_insights(inp_arr))
+        inp_arr = [user_details,shap_result,dep_details, market_details]
+        with st.spinner("Processing data, please wait..."):
+            ai_answer = ai_insights(inp_arr)
+        st.markdown(ai_answer)
 
     st.divider()
 
     st.title("Similar Active Listings")
-
-    listing_table = pd.DataFrame({
-        "Model": [1,2,3,4,5],
-        "Year": [1,24,5,6,5],
-        'Ownership': [1,2,3,5,5]
-    })
-    st.table(listing_table)
+    with st.spinner("Loading, please wait..."):
+        cardata = fetch_similar(user_details['model'])
+    listing_table = pd.DataFrame(cardata)
+    # st.dataframe(listing_table, column_config={ "Link": st.column_config.LinkColumn(display_text="View Listing")
+    # })
