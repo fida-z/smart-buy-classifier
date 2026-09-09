@@ -6,11 +6,26 @@ import numpy as np
 import xgboost as xgb
 import shap
 import google.generativeai as genai
+import random
+from selenium import webdriver
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.firefox.options import Options
+import time
 from dotenv import load_dotenv
 
 target_dir = os.path.abspath('../notebooks')
 sys.path.insert(1,target_dir)
-from feature_eng_exports import data, ngt_life
+
+def ngt_life(fuel, car_age):
+    if(fuel == 'Diesel'):
+        return(10-car_age)
+    elif(fuel == 'Electric'):
+        return(15)
+    else:
+        return(15-car_age)
+
 
 def car_preprocess(car_details):
 
@@ -107,17 +122,66 @@ def shap_calc(car_details):
     ]].copy()
 
     shap_explain = shap.TreeExplainer(model)
-    shap_vals = sorted(shap_explain(car_df).values[0])[:6]
+    explanation = shap_explain(car_df)
+
+    shap_vals = explanation.values[0]
+    base_vals = explanation.base_values[0]
+    features = car_df.columns.to_list()
+
+    order = sorted(range(len(shap_vals)), key=lambda i: -abs(shap_vals[i]))[:6]
+
+    base_price = np.expm1(base_vals)
+    running_log = base_vals
+    running_rs = base_price
+
+    contri = []
+
+    for i in order:
+         running_log += shap_vals[i]
+         new_rs = np.expm1(running_log)
+         delta = new_rs - running_rs
+         contri.append((features[i], delta))
+         running_rs = new_rs
+
+    return {
+         'base_price': base_price,
+         'contributions': contri,
+         'final_price' : running_rs
+    }
+
+
+import plotly.graph_objects as go
+
+def render_waterfall(shap_result):
+     
+    contributions = shap_result['contributions']
+    labels = [name for name, _ in contributions]
+    deltas = [delta for _, delta in contributions]
+
+    fig = go.Figure(go.Waterfall(
+        orientation='v',
+        measure=['relative'] * len(deltas),
+        x=labels,
+        y=deltas,
+        base=shap_result['base_price'],
+        increasing=dict(marker=dict(color='#2E8B57')),   # green
+        decreasing=dict(marker=dict(color='#C0392B')),   # red
+        connector=dict(line=dict(color='#C9DCF2', width=1)),
+        text=[f'₹{d:,.0f}' for d in deltas],
+        textposition='outside'
+    ))
+
+    fig.update_layout(
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Roboto, sans-serif', color='#14203A'),
+        yaxis=dict(title='Price (₹)', showgrid=True, gridcolor='#C9DCF2'),
+        margin=dict(l=40, r=20, t=20, b=60),
+        height=400
+    )
+
+    return fig
     
-    shap_dict = {}
-    for val, col in zip(shap_vals, car_df.columns):
-        if val < 0:
-            shap_dict[col] = 'Negative'
-        else:
-            shap_dict[col] = 'Positive'
-
-    return(shap_dict)
-
 
 def ai_insights(content):
     load_dotenv()
@@ -144,8 +208,10 @@ def ai_insights(content):
 
     Generate insights that explain:
     - whether the asking price appears favorable,
+    - some information about the make/model and other characters of the car itself,
     - how the car compares with similar listings,
     - any noteworthy strengths or weaknesses evident from the supplied data.
+    - In the end, give an overall opinion based on what you described about whether the car is worth buying or not.
 
     Return the output in markdown format.
     Input:
@@ -181,18 +247,57 @@ def model_popularity(model_name,seg):
 
     return(df[df['model'] == model_name].index + 1)
 
-def listing_no(model_name, seg):
-    if(seg == 0):
-        df = pd.read_csv('seg0.csv')
-    elif(seg == 1):
-        df = pd.read_csv('seg1.csv')
-    elif(seg == 2):
-        df = pd.read_csv('seg2.csv')
-    elif(seg == 3):
-        df = pd.read_csv('seg3.csv')
+def seg_analysis(segment):
+        df = pd.read_csv('kmodes.csv')
+        seg_grp = df.groupby(['Segment'])
+        avg_price = seg_grp['price'].mean().loc[segment]
+        avg_km = seg_grp['KM driven'].mean().loc[segment]
 
-    return(df.loc[df['model'] == model_name, 'count'].sum())
+        return(round(avg_price,2), round(avg_km,2))
 
-def seg_analysis(model_name, segment):
+
+
+def fetch_similar(model_name):
+    # Setup headless Firefox options required for Streamlit Cloud servers
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
     
+    driver = webdriver.Firefox(options=options)
 
+    def listing_url(model):
+        slug = model.lower().replace(" ", "-")
+        return f"https://cardekho.com{slug}+cars+in+delhi-ncr"
+
+    def get_car_data(url_list):
+        cardata = []
+        for url in url_list:
+            try:
+                driver.get(url)
+                wait = WebDriverWait(driver, 20)
+                
+                # Extract details safely using explicit waits
+                model_element = wait.until(EC.presence_of_element_located((By.XPATH, "//h1")))
+                price_element = wait.until(EC.presence_of_element_located((By.CLASS_BAR, "price") or (By.XPATH, "//*[contains(@class, 'price')]")))
+                
+                data = {
+                    "url": url,
+                    "model": model_element.text,
+                    "price": price_element.text
+                }
+                cardata.append(data)
+            except Exception as e:
+                # Keep looping even if one specific page fails to scrape
+                print(f"Error scraping {url}: {e}")
+                continue
+        return cardata
+
+    # Execute the scraping sequence
+    target_url = listing_url(model_name)
+    results = get_car_data([target_url])
+    
+    # Clean up the browser instance from memory
+    driver.quit()
+    return results
+  
