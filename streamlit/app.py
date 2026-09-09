@@ -160,7 +160,7 @@ if 'user_details' in st.session_state:
     st.divider()
 
     st.title("Similar Active Listings")
-    with st.spinner("Loading, please wait..."):
+    with st.spinner("Loading, please wait, this may take some time..."):
         cardata = fetch_similar(user_details['model'])
     listing_table = pd.DataFrame(cardata)
     # st.dataframe(listing_table, column_config={ "Link": st.column_config.LinkColumn(display_text="View Listing")
