@@ -249,13 +249,17 @@ def get_segment(model_name):
 
 def model_popularity(model_name,seg):
     if(seg == 0):
-        df = pd.read_csv('seg0.csv')
+        path_seg0 = os.path.join(BASE_DIR, 'seg0.csv')
+        df = pd.read_csv(path_seg0)
     elif(seg == 1):
-        df = pd.read_csv('seg1.csv')
+        path_seg1 = os.path.join(BASE_DIR, 'seg1.csv')
+        df = pd.read_csv(path_seg1)
     elif(seg == 2):
-        df = pd.read_csv('seg2.csv')
+        path_seg2 = os.path.join(BASE_DIR, 'seg2.csv')
+        df = pd.read_csv(path_seg2)
     elif(seg == 3):
-        df = pd.read_csv('seg3.csv')
+        path_seg3 = os.path.join(BASE_DIR, 'seg3.csv')
+        df = pd.read_csv(path_seg3)
 
     return(df[df['model'] == model_name].index + 1)
 
