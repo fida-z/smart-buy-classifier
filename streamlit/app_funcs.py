@@ -230,11 +230,16 @@ def ai_insights(content):
 
 
 def get_segment(model_name):
-    seg0 = pd.read_csv('seg0.csv')
-    seg1 = pd.read_csv('seg1.csv')
-    seg2 = pd.read_csv('seg2.csv')
-    seg3 = pd.read_csv('seg3.csv')
 
+    path_seg0 = os.path.join(BASE_DIR, 'seg0.csv')
+    path_seg1 = os.path.join(BASE_DIR, 'seg1.csv')
+    path_seg2 = os.path.join(BASE_DIR, 'seg2.csv')
+    path_seg3 = os.path.join(BASE_DIR, 'seg3.csv')
+
+    seg0 = pd.read_csv(path_seg0)                                      
+    seg1 = pd.read_csv(path_seg1)                                      
+    seg2 = pd.read_csv(path_seg2)                                      
+    seg3 = pd.read_csv(path_seg3)                                      
     seg_count = {}
     for seg, i in zip([seg0,seg1,seg2,seg3],range(4)):
         seg_count[i] = seg.loc[seg['model'] == model_name, 'count'].sum()
