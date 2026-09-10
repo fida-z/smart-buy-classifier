@@ -264,7 +264,8 @@ def model_popularity(model_name,seg):
     return(df[df['model'] == model_name].index + 1)
 
 def seg_analysis(segment):
-        df = pd.read_csv('kmodes.csv')
+        path_kmodes = os.path.join(BASE_DIR, 'kmodes.csv')
+        df = pd.read_csv(path_kmodes)
         seg_grp = df.groupby(['Segment'])
         avg_price = seg_grp['price'].mean().loc[segment]
         avg_km = seg_grp['KM driven'].mean().loc[segment]
