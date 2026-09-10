@@ -75,7 +75,7 @@ def run_predict(car_details):
     ]].copy()
 
 
-    bst = pickle.load(open('xgb.pkl','rb'))
+    bst = pickle.load(open(model_path, 'rb'))
     pred_price = bst.predict(X_vals)
     return pred_price
 
@@ -97,7 +97,7 @@ def predict_dep(car_details,yr):
     X_vals['Ownership'] = X_vals['Ownership']+1
     X_vals['car_age'] = X_vals['car_age']+yr    
 
-    bst = pickle.load(open('xgb.pkl','rb'))
+    bst = pickle.load(open(model_path, 'rb')) 
     pred_price = bst.predict(X_vals)
     return pred_price
 
@@ -113,7 +113,7 @@ def dep_calc(car_details):
 
 
 def shap_calc(car_details):
-    model = pickle.load(open('xgb.pkl','rb')) 
+    model = pickle.load(open(model_path, 'rb'))  
     car_pp = car_preprocess(car_details)
     car_df = car_pp[[
         'model',
