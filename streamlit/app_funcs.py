@@ -18,6 +18,13 @@ from dotenv import load_dotenv
 target_dir = os.path.abspath('../notebooks')
 sys.path.insert(1,target_dir)
 
+# Get the path of the directory where app_funcs.py lives
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(BASE_DIR, 'xgb.pkl')
+
+# Load the model using the correct relative path
+bst = pickle.load(open(model_path, 'rb'))
+
 def ngt_life(fuel, car_age):
     if(fuel == 'Diesel'):
         return(10-car_age)
