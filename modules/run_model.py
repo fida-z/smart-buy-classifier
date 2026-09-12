@@ -6,7 +6,7 @@ from feature_eng import car_builder
 
 MODEL_PATH = Path(__file__).resolve().parent.parent/'data_models'/'xgb.pkl'
 
-def load_data_pred(car_details):
+def load_data(car_details):
     car_df = car_builder(car_details)
     X_vals = car_df[[
         'model',
@@ -21,13 +21,11 @@ def load_data_pred(car_details):
         'is_luxury_brand',
     ]].copy()
 
+    return(X_vals)
+
+def load_xgb():
     bst = pickle.load(open(MODEL_PATH, 'rb'))
-
-    return({
-        'X':X_vals,
-        'model':bst
-    })
-
+    return(bst)
 
 def predict_price(X,model):
 
