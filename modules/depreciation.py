@@ -1,11 +1,10 @@
 import pickle
 import numpy as np
-from run_model import load_data_pred
+from run_model import load_data, load_xgb
 
 def predict_depreciation(car_details,year):
-    model_data = load_data_pred(car_details)
-    model = model_data['model']
-    X_vals = model_data['X']
+    model = load_xgb()
+    X_vals = load_data(car_details)
 
     X_vals['Ownership'] = X_vals['Ownership']+1
     X_vals['car_age'] = X_vals['car_age']+year
