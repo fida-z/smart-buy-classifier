@@ -17,10 +17,9 @@ def predict_depreciation(car_details,year):
 
 
 def dep_calc(car_details):
-    year = car_details['Year']
     dep_details = {}
     for yr in range(8):
-        dep_details[2026+yr] = np.expm1(predict_dep(car_details, yr))
+        dep_details[2026+yr] = np.expm1(predict_depreciation(car_details, yr))
     
     return(dep_details)
 
