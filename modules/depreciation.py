@@ -1,4 +1,4 @@
-import pickle
+import pandas as pd
 import numpy as np
 from run_model import load_data, load_xgb
 
@@ -8,8 +8,8 @@ def predict_depreciation(car_details,year):
 
     X_vals['Ownership'] = X_vals['Ownership']+1
     X_vals['car_age'] = X_vals['car_age']+year
-    X_vals['ngt_life'] = X_vals['ngt_life']+year
-    X_vals['ngt_critical'] = True if X_vals['ngt_life']<=3 else False
+    X_vals['ngt_life'] = X_vals['ngt_life']-year
+    X_vals['ngt_critical'] = X_vals['ngt_life'].map(lambda x: True if x<=3 else False)
 
     dep_pred_price = model.predict(X_vals)
     return dep_pred_price
@@ -17,8 +17,8 @@ def predict_depreciation(car_details,year):
 
 def depreciation_calculator(car_details):
     dep_details = {}
-    for yr in range(8):
-        dep_details[2026+yr] = np.expm1(predict_depreciation(car_details, yr))
+    for yr in range(1,8):
+        dep_details[2026+yr] = np.expm1(predict_depreciation(car_details, yr)).item()
     
-    return(dep_details)
+    return(pd.Series(dep_details).reset_index(name='price'))
 
