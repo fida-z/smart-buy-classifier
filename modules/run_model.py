@@ -27,8 +27,9 @@ def load_xgb():
     bst = pickle.load(open(MODEL_PATH, 'rb'))
     return(bst)
 
-def predict_price(X,model):
-
+def predict_price(car_details):
+    model = load_xgb()
+    X = load_data(car_details)
     predval = model.predict(X)
     pred_price = np.expm1(predval)
     return pred_price
