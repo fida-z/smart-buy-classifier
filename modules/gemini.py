@@ -1,7 +1,13 @@
 from dotenv import load_dotenv
-from google import genai
+# from google import genai
 import os
+import importlib.metadata
+import importlib.util
 
+print("google-genai:", importlib.metadata.version("google-genai"))
+print("google-generativeai:", importlib.metadata.version("google-generativeai"))
+
+print("google.genai:", importlib.util.find_spec("google.genai"))
 
 def def_gemini(content):
     load_dotenv()
