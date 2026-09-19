@@ -9,6 +9,10 @@
 - Collect data and feed to Gemini API
 - Feed to Streamlit
 
+---
+
+## File Structure:
+
 smart-buy-classifier/
     -- app.py
 
@@ -16,16 +20,19 @@ smart-buy-classifier/
         --validate.py
 
     -- modules/
-        --feature_eng.py
-        --run_model.py
-        --shap.py
-        --depreciation.py
-        --find_cluster.py
-        --charts.py
-        --gemini.py
+        -- schema.py -> data object creation for the Used Car
+        --feature_eng.py -> Precprocess user-input vehicle
+        --run_model.py -> predict price with XGB
+        --shap.py -> SHAP value calculations
+        --depreciation.py -> Calculate Depreciation values
+        --find_cluster.py -> find relevant cluster in Model Cluster and does Cluster-specific analysis
+        --charts.py -> Implement Depreciation Curve Chart and SHAP Plot
+        --gemini.py -> Adds AI Market Agent functionality
         --listing_scraper.py
+        --streamlit_ui.py
 
-    --data/
+    --data_models/
+        --xgb.pkl
         --kmodes.csv
         --seg0.csv
         --seg1.csv
@@ -33,9 +40,6 @@ smart-buy-classifier/
         --seg3,csv
         --data.csv
     
-    -- models/
-        --xgb.pkl
-
 -- .env
 -- .gitignore
 -- requirements.txt
