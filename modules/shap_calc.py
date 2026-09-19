@@ -1,12 +1,12 @@
 import numpy as np
-import shap
+from shap import TreeExplainer
 from run_model import load_data, load_xgb
 
 def shap_calculator(car_details):
     model = load_xgb()
     car_df = load_data(car_details)
 
-    shap_explain = shap.TreeExplainer(model)
+    shap_explain = TreeExplainer(model)
     explanation = shap_explain(car_df)
 
     shap_vals = explanation.values[0]
