@@ -1,11 +1,10 @@
-from dotenv import load_dotenv
+import streamlit as st
 from google import genai
 import os
 
 
 def def_gemini(content):
-    load_dotenv()
-    GEMINI = os.getenv("GEMINI")
+    GEMINI = st.secrets["GEMINI"]
     client = genai.Client(api_key=GEMINI)
 
     prompt = f'''
