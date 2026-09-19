@@ -4,7 +4,7 @@ import pandas as pd
 from schema import submit_car
 from run_model import predict_price
 from feature_eng import calc_ngt_life
-from shap_self import shap_calculator
+from shap_calc import shap_calculator
 from depreciation import depreciation_calculator
 from charts import render_waterfall, render_depcurve
 from find_cluster import get_segment, model_popularity, segment_analysis
