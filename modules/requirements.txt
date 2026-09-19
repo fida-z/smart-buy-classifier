@@ -6,4 +6,8 @@ numpy==2.3.3
 matplotlib==3.10.6
 python-dotenv==1.2.2
 plotly==6.8.0
+<<<<<<< HEAD
 google-genai
+=======
+google-genai
+>>>>>>> 2c5340323054a774a8f77a8644de838519327e08

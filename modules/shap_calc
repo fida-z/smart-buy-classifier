@@ -2,12 +2,6 @@ import numpy as np
 import shap
 from run_model import load_data, load_xgb
 
-print("SHAP MODULE:", shap)
-print("SHAP FILE:", shap.__file__)
-print("SHAP VERSION:", getattr(shap, "__version__", "NO VERSION"))
-print("HAS TREEEXPLAINER:", hasattr(shap, "TreeExplainer"))
-
-
 def shap_calculator(car_details):
     model = load_xgb()
     car_df = load_data(car_details)
