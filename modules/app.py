@@ -4,7 +4,7 @@ import pandas as pd
 from schema import submit_car
 from run_model import predict_price
 from feature_eng import calc_ngt_life
-from shap_self import shap_calculator
+from shap_calc import shap_calculator
 from depreciation import depreciation_calculator
 from charts import render_waterfall, render_depcurve
 from find_cluster import get_segment, model_popularity, segment_analysis
@@ -148,10 +148,10 @@ if 'user_details' in st.session_state:
     with ai_recs:
         st.text('AI Market Analyst Summary')
         inp_arr = [user_details,shap_result,dep_details, market_details]
-        # prompt,client = def_gemini(inp_arr)
+        prompt,client = def_gemini(inp_arr)
 
-        # with st.spinner("Processing data, please wait..."):
-        #     stream = st.write_stream(get_gemini_stream(prompt,client))
+        with st.spinner("Processing data, please wait..."):
+            stream = st.write_stream(get_gemini_stream(prompt,client))
     st.divider()
 
     st.title("Similar Active Listings")
